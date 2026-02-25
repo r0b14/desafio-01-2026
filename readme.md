@@ -207,17 +207,20 @@ Você pode usar qualquer tecnologia.
 ---
 
 ## 📦 Como Participar
-1. Faça um fork deste repositório
-2. Desenvolva sua solução
-3. Publique em algum ambiente acessível
-   - Deploy público é um diferencial
-4. Atualize o README com:
+1. **Dê uma estrela (star ⭐)** neste repositório do GitHub.
+2. **Faça um fork** deste repositório para sua conta.
+3. Crie uma branch para o seu desenvolvimento (ex: `git checkout -b feat/solucao-seunome`).
+4. Desenvolva sua solução.
+5. Publique em algum ambiente acessível.
+   - Deploy público é um diferencial.
+6. Atualize o seu README com:
    - Arquitetura
    - Decisões técnicas
    - Como rodar
    - Como testar
    - Prints ou vídeo
-5. Envie o link do repositório e da aplicação publicada
+7. Faça o commit e o push das suas alterações para o seu fork.
+8. **Envie um Pull Request (PR)** para a nossa branch informando o link da sua aplicação publicada.
 
 ---
 
