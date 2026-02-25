@@ -257,3 +257,9 @@ Preferimos uma solução sólida entregue cedo do que algo grande e confuso.
     </picture>
   </a>
 </p>
+
+<br/>
+
+<p align="center">
+  <sub><sup><em>P.S: Incentivamos o <i>vibe coding</i>! Se você salvar todos os prompts utilizados durante a sua solução e enviá-los junto ao repositório, será considerado um diferencial gigante!</em></sup></sub>
+</p>
