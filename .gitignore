@@ -1,0 +1,18 @@
+# Dependências
+node_modules/
+
+# Variáveis de Ambiente
+.env
+.env.local
+*.env
+!.env.example
+
+# Build TypeScript
+dist/
+build/
+
+# Logs e Misc
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
