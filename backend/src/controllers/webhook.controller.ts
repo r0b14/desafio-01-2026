@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-// import { ingestMessage } from '../services/message.service';
+import { ingestMessage } from "../services/message.service";
 
 export const handleWebhook = async (
   req: Request,
@@ -12,7 +12,8 @@ export const handleWebhook = async (
     res.status(200).json({ success: true, message: "Webhook received" });
 
     // Processamento assíncrono (Ingestão/Worker)
-    // await ingestMessage(payload);
+    // Faz a ingestão sem aguardar para evitar block do evento do Express.
+    ingestMessage(payload).catch(console.error);
   } catch (error) {
     console.error("Error handling webhook:", error);
   }
