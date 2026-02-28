@@ -1,0 +1,33 @@
+# Checklist do Projeto Antigravity
+
+## 1. Planejamento e Arquitetura 🏗️
+- [x] Definição de Requisitos (descricao.md)
+- [x] Arquitetura do Sistema (arquitetura.md)
+- [x] Diagramas de Fluxo Visual (processamento.mmd, visaogeral.mmd)
+- [x] Estruturação do Fluxo no n8n (fluxon8n.json)
+
+## 2. Banco de Dados (Supabase) 🗄️
+- [ ] Criação do projeto no Supabase
+- [ ] Schema SQL: Tabela `users`
+- [ ] Schema SQL: Tabela `messages`
+- [ ] Schema SQL: Tabela `emotions`
+- [ ] Schema SQL: Tabela `intentions`
+- [ ] Schema SQL: Tabela `user_skills`
+
+## 3. Integração Evolution API (WhatsApp) 💬
+- [ ] Configuração da instância da Evolution API
+- [ ] Conectar um número/grupo de WhatsApp
+- [ ] Expor o Webhook localmente (Ngrok) ou em nuvem para receber eventos
+
+## 4. Pipeline de Processamento (n8n / Worker) ⚙️
+- [ ] Importar [fluxon8n.json](file:///c:/Users/Robso/Github/desafio-01-2026/backend/fluxos/fluxon8n.json) no n8n
+- [ ] Configurar credenciais do Supabase no n8n
+- [ ] Configurar credenciais da OpenAI no n8n
+- [ ] Testar ingestão de mensagens via Webhook (Evolution -> n8n -> Supabase)
+- [ ] Testar processamento de IA e validação de inferências (deltas de skills)
+
+## 5. Visualização (Frontend / API Rest) 📊 (Opcional)
+- [ ] Criar endpoint `GET /api/users`
+- [ ] Criar endpoint `GET /api/users/:id` (Overview de skills)
+- [ ] Criar endpoint `GET /api/messages`
+- [ ] Desenvolver tela minimalista de participantes e radar de habilidades

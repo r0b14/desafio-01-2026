@@ -1,0 +1,45 @@
+flowchart TD
+    %% Cores e Estilos Básicos
+    classDef whatsapp fill:#25D366,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef aws fill:#FF9900,stroke:#232F3E,stroke-width:2px;
+    classDef db fill:#3ECF8E,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef ai fill:#74AA9C,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef node fill:#339933,stroke:#fff,stroke-width:2px,color:#fff;
+
+    %% Atores e Componentes
+    USER((👤 Usuário))
+
+    subgraph Canal [Canal de Entrada]
+        WAPP[💬 Grupo do WhatsApp]:::whatsapp
+        EVO[🔌 Evolution API]:::node
+    end
+
+    subgraph Backend Ingestao [Ingestão e Armazenamento Otimizado]
+        API["⚡ Backend / Webhook Handler<br/>Node.js + TS"]:::node
+        DB[("🗄️ Supabase<br/>PostgreSQL")]:::db
+    end
+
+    subgraph Inteligencia [Pipeline Assíncrono de IA]
+        WORKER["⚙️ Worker / Job Processor<br/>Node.js"]:::node
+        GPT["🧠 ChatGPT API<br/>gpt-4o-mini / JSON Mode"]:::ai
+    end
+
+    subgraph Consumo [Exibição]
+        FRONT[📊 Frontend / Dashboard]
+    end
+
+    %% Relações
+    USER -->|Digita Mensagem| WAPP
+    WAPP -->|Ouve evento| EVO
+    EVO -->|Dispara HTTP POST| API
+
+    API -->|"1. Cria Usuário (se novo)<br/>2. Salva Mensagem Status: PENDING"| DB
+    API -.->|"Responde 200 OK rápido<br/>(Evita timeout do Zap)"| EVO
+
+    DB -.->|Fila de Mensagens Pendentes| WORKER
+    WORKER -->|Envia Texto + Prompt + Contexto| GPT
+    GPT -->|Retorna JSON: Emoção, Intenções, Delta Skills| WORKER
+
+    WORKER -->|"Atualiza status para PROCESSED<br/>Soma o Delta no Perfil"| DB
+
+    FRONT -->|Consulta API REST| DB

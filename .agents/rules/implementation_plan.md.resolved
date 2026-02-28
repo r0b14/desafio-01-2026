@@ -1,0 +1,16 @@
+# Plano de Implementação: Checklist e Próximos Passos
+
+Este plano estabelece a visão geral do estado atual do projeto Antigravity e os próximos passos técnicos necessários para concluí-lo com sucesso, baseando-se na **arquitetura** e nos **requisitos** já definidos.
+
+## User Review Required
+> [!IMPORTANT]
+> Avalie as tarefas listadas no documento [task.md](file:///C:/Users/Robso/.gemini/antigravity/brain/addd8710-5a8c-4444-b2a7-fd2b45f5fb22/task.md). 
+> O próximo grande passo será a execução de queries SQL e criação definitiva das tabelas no banco de dados Supabase e, em seguida, iniciar os testes com a Evolution API e o n8n. 
+> Por favor, assinale na checklist as tarefas prontas e confirme se o escopo reflete suas expectativas.
+
+## Proposed Changes
+Nenhuma alteração direta em arquivos de código ou estrutura de diretórios neste momento. Apenas a criação de artefatos de controle ([task.md](file:///C:/Users/Robso/.gemini/antigravity/brain/addd8710-5a8c-4444-b2a7-fd2b45f5fb22/task.md) e `implementation_plan.md`) para garantir visibilidade da evolução do projeto durante a fase de **Planejamento**.
+
+## Verification Plan
+1. **Manual Verification:**
+   - O usuário revisará o documento [task.md](file:///C:/Users/Robso/.gemini/antigravity/brain/addd8710-5a8c-4444-b2a7-fd2b45f5fb22/task.md) e este plano de implementação para garantir o máximo de aderência e rastreabilidade para o sucesso nas entrevistas e desenvolvimento ponta a ponta.

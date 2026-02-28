@@ -1,0 +1,59 @@
+---
+id: 6342e4f9-97dd-492e-a2c4-b158d61f5769
+---
+sequenceDiagram
+    autonumber
+
+    box rgba(37, 211, 102, 0.1) "Canal de Comunicação"
+        actor U as Usuário
+        participant EVO as Evolution API
+    end
+
+    box rgba(51, 153, 51, 0.1) "Ingestão Rápida (Síncrona)"
+        participant API as Webhook API
+        participant DB as Supabase (PostgreSQL)
+    end
+
+    box rgba(62, 207, 142, 0.1) "Inteligência (Assíncrona)"
+        participant Worker as IA Worker
+        participant GPT as API OpenAI
+    end
+
+    Note over U, GPT: 🚀 FASE 1: Ingestão de Alta Velocidade (Imediato)
+
+    U->>EVO: Envia: "Vocês viram a nova feature? Resolvi!"
+    activate EVO
+
+    EVO->>API: HTTP POST /webhooks/evolution
+    activate API
+
+    API->>DB: Consulta/Cria Usuário (whatsapp_id)
+    API->>DB: Insere `messages` (RAW) c/ status = 'PENDING'
+
+    API-->>EVO: HTTP 200 OK (Imediato, evita retry do zap)
+    deactivate API
+    deactivate EVO
+
+    Note over DB, GPT: 🧠 FASE 2: Processamento e Inteligência (Desacoplado)
+
+    loop Execução Assíncrona
+        Worker->>DB: SELECT messages WHERE status = 'PENDING'
+        activate Worker
+        DB-->>Worker: Retorna batch de mensagens
+
+        Worker->>GPT: Chamada API (Structured Outputs / JSON Mode)
+        activate GPT
+        Note right of GPT: O Prompt força retorno JSON:<br/>Emoção: Engajamento<br/>Intenção: Resolução<br/>Skill Delta: Proatividade +0.2
+
+        GPT-->>Worker: Retorna extração tipada (JSON exato)
+        deactivate GPT
+    end
+
+    Note over DB, Worker: 💾 FASE 3: Persistência do Perfil Dinâmico
+
+    Worker->>DB: Insere registro em `emotions`
+    Worker->>DB: Insere registros em `intentions`
+    Worker->>DB: UPDATE `user_skills` (Soma o +0.2 no perfil)
+    Worker->>DB: UPDATE `messages` status = 'PROCESSED'
+    deactivate Worker
+
