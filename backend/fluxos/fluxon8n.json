@@ -1,0 +1,239 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-processor",
+        "responseMode": "respondImmediately",
+        "options": {
+          "responseBody": "{\n  \"status\": \"received\",\n  \"message\": \"Processing started\"\n}"
+        }
+      },
+      "name": "Webhook de Entrada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 140]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO users (whatsapp_id)\nVALUES ('{{ $json.body.messages[0].from }}')\nON CONFLICT (whatsapp_id) DO UPDATE SET whatsapp_id = EXCLUDED.whatsapp_id\nRETURNING id;"
+      },
+      "name": "Postgres - Check/Create User",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [480, 140],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIALS_ID",
+          "name": "Postgres - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO messages (user_id, content, status)\nVALUES (\n    {{ $('Postgres - Check/Create User').first().json.id }},\n    '{{ $json.body.messages[0].text.body.replace(/'/g, \"''\") }}',\n    'PENDING'\n)\nRETURNING id;"
+      },
+      "name": "Postgres - Insert Message",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [720, 140],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIALS_ID",
+          "name": "Postgres - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "messages": [
+          {
+            "type": "system",
+            "content": "Você é um analista comportamental de IA, treinado para extrair emoções, intenções e o impacto em habilidades de mensagens de texto. Sua saída DEVE ser estritamente um objeto JSON com as seguintes chaves e formatos:\n\n{\n  \"emotion\": {\n    \"label\": \"UMA_EMOCAO_PRIMARIA_RELEVANTE_EX: Alegria, Tristeza, Raiva, Medo, Surpresa, Nojo, Confiança, Antecipação, etc.\",\n    \"score\": \"PONTUACAO_DE_0_A_1_0_PARA_A_EMOCAO\"\n  },\n  \"intentions\": [\n    {\n      \"label\": \"UMA_INTENCAO_DETECTADA_EX: Solicitação de Informação, Reclamação, Elogio, Suporte, Compra, Feedback, Negociação, Questionamento, etc.\",\n      \"score\": \"PONTUACAO_DE_0_A_1_0_PARA_A_INTENCAO\"\n    }\n  ],\n  \"skills_delta\": [\n    {\n      \"skill\": \"NOME_DA_HABILIDADE_EX: Liderança, Comunicação, Resiliência, Pensamento Crítico, Empatia, Negociação, Colaboração, etc.\",\n      \"delta\": \"VALOR_NUMERICO_PARA_AJUSTE_DA_PONTUACAO_EX: 0.1, -0.05, 0.25 (pode ser positivo ou negativo)\"\n    }\n  ]\n}\n\n- A chave \"emotion\" deve conter sempre UMA emoção primária e sua pontuação.\n- A chave \"intentions\" deve ser um array de OBJETOS. Cada objeto representa uma intenção detectada. Retorne um array vazio [] se nenhuma for relevante.\n- A chave \"skills_delta\" deve ser um array de OBJETOS. Cada objeto representa um ajuste delta para uma habilidade específica. Retorne um array vazio [] se nenhuma habilidade for impactada.\n- Os labels devem ser concisos. NÃO inclua texto fora do JSON. Apenas o JSON puro."
+          },
+          {
+            "type": "user",
+            "content": "{{ $('Webhook de Entrada').first().json.body.messages[0].text.body }}"
+          }
+        ],
+        "responseFormat": "json_object"
+      },
+      "name": "OpenAI - Call LLM",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [960, 140],
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIALS_ID",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "let llmOutput;\n\n// Suporte a diferentes formatos do OpenAI Node no n8n\nif ($json.message && $json.message.content) {\n    llmOutput = $json.message.content;\n} else if ($json.choices && $json.choices[0] && $json.choices[0].message) {\n    llmOutput = $json.choices[0].message.content;\n} else {\n    llmOutput = $json;\n}\n\n// Faz o parse seguro para objeto JS\nif (typeof llmOutput === 'string') {\n    llmOutput = JSON.parse(llmOutput);\n}\n\n// Captura IDs dos nós anteriores de forma segura (n8n node syntax)\nconst messageId = $('Postgres - Insert Message').first().json.id;\nconst userId = $('Postgres - Check/Create User').first().json.id;\n\n// Retorno num formato array padronizado para Item Node\nreturn [\n  {\n    json: {\n      messageId: messageId,\n      userId: userId,\n      emotion: llmOutput.emotion || {},\n      intentions: llmOutput.intentions || [], \n      skills_delta: llmOutput.skills_delta || [], \n    }\n  }\n];"
+      },
+      "name": "Code - Parse AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [1200, 140]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO emotions (message_id, primary_emotion, score)\nVALUES (\n    {{ $json.messageId }},\n    '{{ ($json.emotion.label || \"Neutro\").replace(/'/g, \"''\") }}',\n    {{ $json.emotion.score || 0.0 }}\n);"
+      },
+      "name": "Postgres - Save Emotion",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [1440, 140],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIALS_ID",
+          "name": "Postgres - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO intentions (message_id, intention_type, score)\nSELECT \n  {{ $json.messageId }},\n  value->>'label',\n  (value->>'score')::numeric\nFROM jsonb_array_elements('{{ JSON.stringify($json.intentions).replace(/'/g, \"''\") }}'::jsonb)\nWHERE '{{ JSON.stringify($json.intentions) }}' != '[]';"
+      },
+      "name": "Postgres - Save Intentions",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [1680, 140],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIALS_ID",
+          "name": "Postgres - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO user_skills (user_id, skill_name, score)\nSELECT \n  {{ $json.userId }},\n  value->>'skill',\n  (value->>'delta')::numeric\nFROM jsonb_array_elements('{{ JSON.stringify($json.skills_delta).replace(/'/g, \"''\") }}'::jsonb)\nWHERE '{{ JSON.stringify($json.skills_delta) }}' != '[]'\nON CONFLICT (user_id, skill_name) DO UPDATE SET\n  score = user_skills.score + EXCLUDED.score;"
+      },
+      "name": "Postgres - Upsert User Skills",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [1920, 140],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIALS_ID",
+          "name": "Postgres - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE messages\nSET status = 'PROCESSED'\nWHERE id = {{ $json.messageId }};"
+      },
+      "name": "Postgres - Update Message Status",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [2160, 140],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIALS_ID",
+          "name": "Postgres - Supabase"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook de Entrada": {
+      "main": [
+        [
+          {
+            "node": "Postgres - Check/Create User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - Check/Create User": {
+      "main": [
+        [
+          {
+            "node": "Postgres - Insert Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - Insert Message": {
+      "main": [
+        [
+          {
+            "node": "OpenAI - Call LLM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI - Call LLM": {
+      "main": [
+        [
+          {
+            "node": "Code - Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "Postgres - Save Emotion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - Save Emotion": {
+      "main": [
+        [
+          {
+            "node": "Postgres - Save Intentions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - Save Intentions": {
+      "main": [
+        [
+          {
+            "node": "Postgres - Upsert User Skills",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - Upsert User Skills": {
+      "main": [
+        [
+          {
+            "node": "Postgres - Update Message Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
